@@ -40,6 +40,7 @@
 #include <kdl/frames_io.hpp>
 #include <geometry_msgs/TransformStamped.h>
 #include <tf2_kdl/tf2_kdl.h>
+#include <tf/tf.h>
 
 
 using namespace std;
@@ -84,10 +85,9 @@ namespace robot_state_publisher{
   }
 
 
-  // publish moving transforms
-  void RobotStatePublisher::publishTransforms(const map<string, double>& joint_positions, const Time& time, const std::string& tf_prefix)
+  // calculate moving transforms
+  std::vector<geometry_msgs::TransformStamped> RobotStatePublisher::calculateTransforms(const map<string, double>& joint_positions, const Time& time, const std::string& tf_prefix)
   {
-    ROS_DEBUG("Publishing transforms for moving joints");
     std::vector<geometry_msgs::TransformStamped> tf_transforms;
 
     // loop over all joints
@@ -101,13 +101,13 @@ namespace robot_state_publisher{
         tf_transforms.push_back(tf_transform);
       }
     }
-    tf_broadcaster_.sendTransform(tf_transforms);
+
+    return tf_transforms;
   }
 
-  // publish fixed transforms
-  void RobotStatePublisher::publishFixedTransforms(const std::string& tf_prefix, bool use_tf_static)
+  // calculate fixed transforms
+  std::vector<geometry_msgs::TransformStamped> RobotStatePublisher::calculateFixedTransforms(const std::string& tf_prefix, bool use_tf_static)
   {
-    ROS_DEBUG("Publishing transforms for fixed joints");
     std::vector<geometry_msgs::TransformStamped> tf_transforms;
     geometry_msgs::TransformStamped tf_transform;
 
@@ -122,11 +122,8 @@ namespace robot_state_publisher{
       tf_transform.child_frame_id = tf::resolve(tf_prefix, seg->second.tip);
       tf_transforms.push_back(tf_transform);
     }
-    if(use_tf_static){
-      static_tf_broadcaster_.sendTransform(tf_transforms);
-    }else{
-      tf_broadcaster_.sendTransform(tf_transforms);
-    }
+
+    return tf_transforms;
   }
 
 }
