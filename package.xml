@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>iai_tf_log_checker</name>
+  <version>0.0.1</version>
+  <description>The iai_tf_log_checker package</description>
+
+  <author email="georg.bartels@cs.uni-bremen.de">Georg Bartels</author>
+  <author email="wim@willowgarage.com">Wim Meeussen</author>
+  <maintainer email="georg.bartels@cs.uni-bremen.de">Georg Bartels</maintainer>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>roscpp</depend>
+  <depend>kdl_parser</depend>
+  <depend>tf2_kdl</depend>
+
+</package>
