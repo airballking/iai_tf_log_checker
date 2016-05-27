@@ -2,6 +2,7 @@
 #include <iai_tf_log_checker/utils.hpp>
 #include <ros/ros.h>
 #include <tf2_msgs/TFMessage.h>
+#include <algorithm>
 
 using json = nlohmann::json;
 using namespace iai_tf_log_checker;
@@ -84,7 +85,7 @@ geometry_msgs::TransformStamped toTransformStampedMsg(const json& entry,
   geometry_msgs::TransformStamped msg;
   msg.header = toHeaderMsg(safelyGetEntry(entry, "header", error_msg), 
       error_msg);
-  msg.child_frame_id = "TODO: parse me!";
+  msg.child_frame_id = safelyGetEntry(entry, "child_frame_id", error_msg).get<std::string>();
   msg.transform = toTransformMsg(safelyGetEntry(entry, "transform", error_msg));
   return msg;
 }
@@ -108,11 +109,36 @@ std::vector<tf2_msgs::TFMessage> toTfMessages(const std::vector<json>& json_entr
   return msgs;
 }
 
+std::vector<std::string> checkCommonStamps(const tf2_msgs::TFMessage& msg, const std::string& error_msg)
+{
+  std::vector<std::string> issues;
+  for(size_t i=0; i<msg.transforms.size(); ++i)
+    if(msg.transforms[0].header.stamp != msg.transforms[1].header.stamp)
+      issues.push_back(error_msg + " Transform #" + std::to_string(i) + " and #0 differ in stamp.");
+  return issues;
+}
+
+std::vector<std::string> checkCommonStamps(const std::vector<tf2_msgs::TFMessage>& msgs)
+{
+  std::vector<std::string> issues;
+  for(size_t i=0; i<msgs.size(); ++i)
+  {
+    std::vector<std::string> new_issues =
+        checkCommonStamps(msgs[i], "TF message #" + std::to_string(i) + ", inconsistent stamps:");
+    issues.insert(issues.end(), new_issues.begin(), new_issues.end());
+  }
+
+  return issues;
+}
+
 void checkTfJson(const std::vector<std::string>& raw_json_entries)
 {
   std::vector<json> parsed_entries = parseJsonEntries(raw_json_entries);
   std::vector<tf2_msgs::TFMessage> msgs = toTfMessages(parsed_entries);
-  std::cout << msgs[0].transforms[0] << std::endl;
+  std::vector<std::string> stamp_issues = checkCommonStamps(msgs);
+  ROS_INFO("Found %lu time stamp issues.", stamp_issues.size());
+  for(size_t i=0; i<stamp_issues.size(); ++i)
+    std::cout << stamp_issues[i] << std::endl;
 }
 
 int main(int argc, char **argv)
